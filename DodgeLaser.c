@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <conio.h>
 #include <Windows.h>
+#include <time.h>
 
 // 색상 정의
 #define BLACK	0
@@ -23,6 +24,7 @@
 
 //조작 및 캐릭터 관련
 #define STAR '*'
+#define LASER '#'
 #define STAR1 "★" // player1 표시
 #define BLANK "  " // ' ' 로하면 흔적이 지워진다 
 
@@ -203,11 +205,79 @@ void StartMenu() {
 	}
 }
 
+void senseLaser(int Lx, int Ly, int set) {
+	int i;
+	if (set > 7) {
+		for (i = 1; i < HEIGHT - 2; i++) {
+			gotoxy(Lx, i);
+			printf("*");
+			gotoxy(Lx + 1, i);
+			printf("*");
+		}
+	}
+	else {
+		for (i = 2; i < WIDTH - 2; i++) {
+			gotoxy(i, Ly);
+			printf("*");
+			gotoxy(i, Ly + 1);
+			printf("*");
+		}
+	}
+}
+void shootLaser(int Lx, int Ly, int set) {
+	int i;
+	if (set < 7) {
+		for (i = 1; i < HEIGHT - 2; i++) {
+			gotoxy(Lx, i);
+			printf("#");
+			gotoxy(Lx + 1, i);
+			printf("#");
+		}
+		Sleep(50);
+		for (i = 1; i < HEIGHT - 2; i++) {
+			gotoxy(Lx, i);
+			printf(" ");
+			gotoxy(Lx + 1, i);
+			printf(" ");
+		}
+	}
+	else {
+		for (i = 2; i < WIDTH - 2; i++) {
+			gotoxy(i, Ly);
+			printf("#");
+			gotoxy(i, Ly + 1);
+			printf("#");
+		}
+		Sleep(50);
+		for (i = 2; i < WIDTH - 2; i++) {
+				gotoxy(i, Ly);
+			printf(" ");
+			gotoxy(i, Ly + 1);
+			printf(" ");
+		}
+	}
+	//Lx = rand() % 76 + 2; //레이저 2줄
+	//Ly = rand() % 20 + 1; //레이저 2줄 -> 최대값 1 줄임
+}
+
+void show_time(int remain_time)
+{
+	// 완성할 것
+	gotoxy(31, 24);
+	textcolor(WHITE, YELLOW1);
+	printf("시간 : %02d", remain_time);
+	textcolor(WHITE, BLACK);
+}
+
 void main()
 {
 	unsigned char ch; // 특수키 0xe0 을 입력받으려면 unsigned char 로 선언해야 함
 	int oldx, oldy, newx, newy;
 	int keep_moving;
+
+	int run_time, start_time, remain_time, last_remain_time;
+	int laser_time = 0;
+	int Lx, Ly, sh, lasercount = 0;
 
 	newx = oldx = 10;
 	newy = oldy = 10;
@@ -218,16 +288,39 @@ void main()
 	system("mode con cols=80 lines=24");
 	cls(BLACK, WHITE);
 	draw_box2(0, 0, 78, 22);
-	StartMenu();
+	StartMenu(); //시작화면
 
-	system("mode con cols=88 lines=24");
+	system("mode con cols=88 lines=25");
 	cls(BLACK, WHITE);
 	textcolor(WHITE, BLACK);
 	draw_box2(0, 0, 78, 22);
 	putstar(oldx, oldy, STAR);
 	ch = 0;
 	keep_moving = 0;
+	srand(time(NULL));
+	start_time = time(NULL);
+	remain_time = 0;
+	show_time(remain_time);
 	while (1) {
+		run_time = time(NULL) - start_time;
+		if (run_time > laser_time && (run_time % 2 == 0)) {
+			sh = rand() % 10;
+			if (sh > 7) {
+				Lx = rand() % 76 + 2;
+				Ly = rand() % 20 + 1;
+			}
+			else {
+				Lx = rand() % 76 + 2;
+				Ly = rand() % 20 + 1;
+			}
+			senseLaser(Lx, Ly, sh);
+			laser_time = run_time;
+			if (lasercount % 3 == 0) {
+				shootLaser(Lx, Ly, sh);
+			}
+		}
+		lasercount++;
+		show_time(run_time);
 		if (_kbhit() == 1) {
 			ch = _getch();
 			if (ch == ESC) {
@@ -272,6 +365,7 @@ void main()
 			oldy = newy;
 			keep_moving = 0; //한 번에 한칸씩만 이동할 예정
 		}
+		
 		Sleep(Delay);
 	}
 
