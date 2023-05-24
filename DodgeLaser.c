@@ -24,7 +24,7 @@
 
 //조작 및 캐릭터 관련
 #define STAR '*'
-#define LASER '#' //*로 대체할 예정
+#define LASER "○" //*로 대체할 예정
 #define STAR1 "★" // player1 표시
 #define BLANK "  " // ' ' 로하면 흔적이 지워진다 
 
@@ -42,21 +42,21 @@
 #define HEIGHT 24
 
 //전역변수
-int Delay = 100; // 100 msec delay, 이 값을 줄이면 속도가 빨라진다.
+int Delay = 10; // 100 msec delay, 이 값을 줄이면 속도가 빨라진다.
 int keep_moving = 1; // 1:계속이동, 0:한칸씩이동.
 //int time_out = 30; // 제한시간
 int xLaser[WIDTH][HEIGHT] = { 0 };
 int yLaser[WIDTH][HEIGHT] = { 0 };
 int xLaser_count = 0;
 int yLaser_count = 0;
-int laserinterval = 4;
+int laserinterval = 1;
 int score[100] = { 0 };
 int user_score[1] = { 0 };
 int item[WIDTH][HEIGHT] = { 0 }; // 1이면 Gold 있다는 뜻
 int iteminterval = 30; // GOLD 표시 간격
 int called[2];
 int frame_count = 0;
-int Laser_frame_sync = 10000;
+int Laser_frame_sync = 100;
 int p_frame_sync = 10;
 int p_frame_sync_start = 0;
 
@@ -156,11 +156,7 @@ void player1(unsigned char ch)
 		last_ch = 0;
 		ch = 0;
 	}
-	// 같은 방향으로 key 가 들어오면 무시한다.
-	if (last_ch == ch && frame_count % p_frame_sync != 0)
-		return;
-	if (keep_moving && ch == 0)
-		ch = last_ch;
+	
 	last_ch = ch;
 
 	switch (ch) {
@@ -168,8 +164,8 @@ void player1(unsigned char ch)
 		if (oldy > 1) // 0 은 Status Line
 			newy = oldy - 1;
 		else { // 벽에 부딛치면 방향을 반대로 이동
-			newy = oldy + 1;
-			last_ch = DOWN;
+			newy = oldy;
+			//last_ch = DOWN;
 		}
 		move_flag = 1;
 		break;
@@ -177,8 +173,8 @@ void player1(unsigned char ch)
 		if (oldy < HEIGHT - 3)
 			newy = oldy + 1;
 		else {
-			newy = oldy - 1;
-			last_ch = UP;
+			newy = oldy;
+			//last_ch = UP;
 		}
 		move_flag = 1;
 		break;
@@ -186,8 +182,8 @@ void player1(unsigned char ch)
 		if (oldx > 2)
 			newx = oldx - 2;
 		else {
-			newx = oldx + 2;
-			last_ch = RIGHT;
+			newx = oldx;
+			//last_ch = RIGHT;
 		}
 		move_flag = 1;
 		break;
@@ -195,8 +191,8 @@ void player1(unsigned char ch)
 		if (oldx < WIDTH - 4)
 			newx = oldx + 2;
 		else {
-			newx = oldx - 2;
-			last_ch = LEFT;
+			newx = oldx;
+			//last_ch = LEFT;
 		}
 		move_flag = 1;
 		break;
@@ -206,7 +202,7 @@ void player1(unsigned char ch)
 		putstar(newx, newy, STAR1); // 새로운 위치에서 * 를 표시한다.
 		oldx = newx; // 마지막 위치를 기억한다.
 		oldy = newy;
-		move_flag = 1;
+		move_flag = 0;
 	}
 }
 
@@ -256,6 +252,7 @@ void StartMenu() {
 	xLaser_count = 0;
 	yLaser_count = 0;
 	iteminterval = 30;
+	laserinterval = 1;
 	score[0] = 0;
 	called[0] = called[1] = 0;
 	frame_count = 0;
@@ -339,22 +336,35 @@ void shootLaser(int Lx, int Ly, int set) {
 }
 
 void Laser_start() {
-	int x, y, set;
+	int x, y, set, i, tmp = 0;
 	set = rand() % 10;
 	if (set < 7) {
-		x = rand() % (WIDTH - 5) + 2;
+		do{
+			x = rand() % (WIDTH - 5) + 2;
+			for (i = 0; i < HEIGHT; i++) {
+				if (xLaser[x][i])
+					tmp = 1;
+			}
+		} while (tmp == 1);
 		textcolor(WHITE, WHITE);
 		gotoxy(x, 1);
-		printf("*");
+		printf(LASER);
 		xLaser[x][1] = 1;
+		//xLaser[x + 1][1] = 1;
 		xLaser_count++;
 		textcolor(WHITE, BLACK);
 	}
 	else {
-		y = rand() % (HEIGHT - 4) + 1;
+		do {
+			y = rand() % (HEIGHT - 4) + 1;
+			for (i = 0; i < WIDTH; i++) {
+				if (yLaser[i][y])
+					tmp = 1;
+			}
+		} while (tmp == 1);
 		textcolor(WHITE, WHITE);
 		gotoxy(2, y);
-		printf("*");
+		printf(LASER);
 		yLaser[2][y] = 1;
 		yLaser_count++;
 		textcolor(WHITE, BLACK);
@@ -373,20 +383,23 @@ void xLaser_shoot() {
 					gotoxy(x, y - 3);
 					printf(BLANK);
 					xLaser[x][y - 3] = 0;
+					//xLaser[x + 1][y - 3] = 0;
 					gotoxy(x, y + 1);
 					textcolor(WHITE, WHITE);
-					printf("*");
+					printf(LASER);
 					textcolor(WHITE, BLACK);
 					xLaser[x][y + 1] = 1;
+					//xLaser[x + 1][y + 1] = 1;
 					break;
 				}
 
 				else if (y <= 3) {
 					gotoxy(x, y + 1);
 					textcolor(WHITE, WHITE);
-					printf("*");
+					printf(LASER);
 					textcolor(WHITE, BLACK);
 					xLaser[x][y + 1] = 1;
+					//xLaser[x + 1][y + 1] = 1;
 					break;
 				}
 			}
@@ -394,6 +407,7 @@ void xLaser_shoot() {
 				gotoxy(x, y - 3);
 				printf(BLANK);
 				xLaser[x][y - 3] = 0;
+				//xLaser[x + 1][y - 3] = 0;
 				break;
 			}
 		}
@@ -406,32 +420,32 @@ void yLaser_shoot() {
 	if (yLaser_count == 0)
 		return;
 	for (y = 0; y < HEIGHT; y++) {
-		for (x = 0; x < WIDTH; x++) {
-			if (yLaser[x][y] && yLaser[x + 1][y] != 1) {
-				if (x > 5 && x < WIDTH - 5) {
-					gotoxy(x - 4, y);
+		for (x = 0; x < WIDTH + 4; x++) {
+			if (yLaser[x][y] && yLaser[x + 2][y] != 1) {
+				if (x > 7 && x < WIDTH - 5) {
+					gotoxy(x - 6, y);
 					printf(BLANK);
-					yLaser[x - 4][y] = 0;
-					gotoxy(x + 1, y);
+					yLaser[x - 6][y] = 0;
+					gotoxy(x + 2, y);
 					textcolor(WHITE, WHITE);
-					printf("*");
+					printf(LASER);
 					textcolor(WHITE, BLACK);
-					yLaser[x + 1][y] = 1;
+					yLaser[x + 2][y] = 1;
 					break;
 				}
-				else if (x <= 5) {
-					gotoxy(x + 1, y);
+				else if (x <= 7) {
+					gotoxy(x + 2, y);
 					textcolor(WHITE, WHITE);
-					printf("*");
+					printf(LASER);
 					textcolor(WHITE, BLACK);
-					yLaser[x + 1][y] = 1;
+					yLaser[x + 2][y] = 1;
 					break;
 				}
 			}
-			else if (x >= 4 && yLaser[x - 4][y] == 1) {
-				gotoxy(x - 4, y);
+			if (x >= 7 && yLaser[x - 6][y] == 1) {
+				gotoxy(x - 6, y);
 				printf(BLANK);
-				yLaser[x - 4][y] = 0;
+				yLaser[x - 6][y] = 0;
 				break;
 			}
 		}
@@ -469,7 +483,7 @@ void main()
 
 	putstar(oldx, oldy, STAR);
 	ch = 0;
-	keep_moving = 1;
+	keep_moving = 0;
 	//srand(time(NULL));
 	start_time = time(NULL);
 	remain_time = 0;
@@ -502,15 +516,16 @@ void main()
 					player1(ch);
 					break;
 				default:
-					if (frame_count % p_frame_sync == 0)
-						player1(0);
+					/*if (frame_count % p_frame_sync == 0)
+						player1(0);*/
+					keep_moving = 1;
 				}
 			}
 		}
-		else {
+		/*else {
 			if (frame_count % p_frame_sync == 0)
 				player1(0);
-		}
+		}*/
 		if (frame_count % Laser_frame_sync == 0) {
 			xLaser_shoot();
 			yLaser_shoot();
