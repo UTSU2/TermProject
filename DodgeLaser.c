@@ -3,7 +3,6 @@
 #include <conio.h>
 #include <Windows.h>
 #include <time.h>
-#include <process.h>
 
 // 색상 정의
 #define BLACK	0
@@ -46,7 +45,7 @@
 int Delay = 100; // 100 msec delay, 이 값을 줄이면 속도가 빨라진다.
 int keep_moving = 1; // 1:계속이동, 0:한칸씩이동.
 //int time_out = 30; // 제한시간
-int xLaser[WIDTH][HEIGHT] = {0};
+int xLaser[WIDTH][HEIGHT] = { 0 };
 int yLaser[WIDTH][HEIGHT] = { 0 };
 int xLaser_count = 0;
 int yLaser_count = 0;
@@ -120,6 +119,8 @@ void showscore()
 	textcolor(BLACK, WHITE);
 }
 
+// box 그리기 함수, ch 문자열로 (x1,y1) ~ (x2,y2) box를 그린다.
+// 한글 문자를 그리는 용도로 사용 "□" 로 벽을 그리는 경우
 void draw_box2(int x1, int y1, int x2, int y2)
 {
 	int x, y;
@@ -141,7 +142,6 @@ void draw_box2(int x1, int y1, int x2, int y2)
 	gotoxy(x2, y1); printf("┐");
 	gotoxy(x2, y2); printf("┘");
 }
-
 
 void player1(unsigned char ch)
 {
@@ -211,11 +211,7 @@ void player1(unsigned char ch)
 }
 
 void StartMenu() {
-	system("mode con cols=80 lines=24");
-	cls(BLACK, WHITE);
-	draw_box2(0, 0, 78, 22);
-
-
+	//초기화면
 	gotoxy(2, 1);
 	textcolor(YELLOW2, BLACK);
 	printf("■       ■■■■ ■■■■ ■■■■ ■■■■\n");
@@ -287,83 +283,59 @@ void StartMenu() {
 	}
 }
 
-void senseLaser(int xy, int set) {
+void senseLaser(int Lx, int Ly, int set) {
 	int i;
-	if (set == 0) { //x좌표값
+	if (set > 7) {
 		for (i = 1; i < HEIGHT - 2; i++) {
-			gotoxy(xy, i);
+			gotoxy(Lx, i);
 			printf("*");
-			gotoxy(xy + 1, i);
+			gotoxy(Lx + 1, i);
 			printf("*");
 		}
 	}
-	else { //y좌표값
+	else {
 		for (i = 2; i < WIDTH - 2; i++) {
-			gotoxy(i, xy);
+			gotoxy(i, Ly);
 			printf("*");
-			gotoxy(i, xy + 1);
+			gotoxy(i, Ly + 1);
 			printf("*");
 		}
 	}
 }
-
 void shootLaser(int Lx, int Ly, int set) {
 	int i;
 	if (set < 7) {
 		for (i = 1; i < HEIGHT - 2; i++) {
 			gotoxy(Lx, i);
-			printf("*");
+			printf("#");
 			gotoxy(Lx + 1, i);
-			printf("*");
+			printf("#");
 		}
-		Sleep(100);
+		Sleep(50);
 		for (i = 1; i < HEIGHT - 2; i++) {
 			gotoxy(Lx, i);
-			printf("#");
+			printf(" ");
 			gotoxy(Lx + 1, i);
-			printf("#");
+			printf(" ");
 		}
 	}
 	else {
 		for (i = 2; i < WIDTH - 2; i++) {
 			gotoxy(i, Ly);
-			printf("*");
+			printf("#");
 			gotoxy(i, Ly + 1);
-			printf("*");
+			printf("#");
 		}
-		Sleep(300);
+		Sleep(50);
 		for (i = 2; i < WIDTH - 2; i++) {
 			gotoxy(i, Ly);
-			printf("#");
+			printf(" ");
 			gotoxy(i, Ly + 1);
-			printf("#");
+			printf(" ");
 		}
 	}
-	//Lx = rand() % 75 + 2; //레이저 2줄
+	//Lx = rand() % 76 + 2; //레이저 2줄
 	//Ly = rand() % 20 + 1; //레이저 2줄 -> 최대값 1 줄임
-}
-
-
-void Laser(int xy, int set) {
-	int x, y, dx, dy, newx, newy, i;
-	//int newLaser[WIDTH][HEIGHT] = { 0 };
-	//static call_count = 0;
-
-	if (Laser_count == 0) {
-		return;
-	}
-	else if (set == 0) {
-		for (i = 1; i < HEIGHT - 2; i++) {
-			gotoxy(xy, i);
-			printf("*");
-		}
-	}
-	else {
-		for (i = 2; i < HEIGHT - 2; i++) {
-			gotoxy(i, xy);
-			printf("*");
-		}
-	}
 }
 
 void Laser_start() {
@@ -381,7 +353,7 @@ void Laser_start() {
 	else {
 		y = rand() % (HEIGHT - 4) + 1;
 		textcolor(WHITE, WHITE);
-		gotoxy(2, y); 
+		gotoxy(2, y);
 		printf("*");
 		yLaser[2][y] = 1;
 		yLaser_count++;
@@ -391,7 +363,7 @@ void Laser_start() {
 
 void xLaser_shoot() {
 	int x, y;
-	
+
 	if (xLaser_count == 0)
 		return;
 	for (x = 0; x < WIDTH; x++) {
@@ -408,7 +380,7 @@ void xLaser_shoot() {
 					xLaser[x][y + 1] = 1;
 					break;
 				}
-				
+
 				else if (y <= 3) {
 					gotoxy(x, y + 1);
 					textcolor(WHITE, WHITE);
@@ -432,7 +404,7 @@ void yLaser_shoot() {
 	int x, y;
 
 	if (yLaser_count == 0)
-		return; 
+		return;
 	for (y = 0; y < HEIGHT; y++) {
 		for (x = 0; x < WIDTH; x++) {
 			if (yLaser[x][y] && yLaser[x + 1][y] != 1) {
@@ -447,7 +419,7 @@ void yLaser_shoot() {
 					yLaser[x + 1][y] = 1;
 					break;
 				}
-				else if (x <= 5){
+				else if (x <= 5) {
 					gotoxy(x + 1, y);
 					textcolor(WHITE, WHITE);
 					printf("*");
@@ -468,11 +440,9 @@ void yLaser_shoot() {
 
 void show_time(int remain_time)
 {
-
 	gotoxy(31, 24);
-	gotoxy(35, 24);
 	textcolor(WHITE, YELLOW1);
-	printf("지난시간 : %02d", remain_time);
+	printf("시간 : %02d", remain_time);
 	textcolor(WHITE, BLACK);
 }
 
@@ -488,23 +458,13 @@ void main()
 	newx = oldx = 10;
 	newy = oldy = 10;
 
-
-//START:
+	//START:
 	laser_time = 0;
 	lasercount = 0;
 	removeCursor(); // 커서를 안보이게 한다
 	system("mode con cols=80 lines=24");
 	cls(BLACK, WHITE);
 	draw_box2(0, 0, 78, 22);
-
-	//char buf[100];
-	int checkLaser[76][2] = { 0 }; //x좌표 최댓값 76, y좌표 최댓값 20, set은 1이면 x, 2면 y
-	int stackLaser[100] = { 0 };
-	int L, tmp;
-
-	removeCursor(); // 커서를 안보이게 한다
-
-
 	StartMenu(); //시작화면
 
 	putstar(oldx, oldy, STAR);
@@ -516,7 +476,6 @@ void main()
 	show_time(remain_time);
 	while (1) {
 		run_time = time(NULL) - start_time;
-
 		if (run_time > laser_time && (run_time % laserinterval == 0)) {
 			Laser_start();
 			laser_time = run_time;
