@@ -42,12 +42,13 @@
 #define HEIGHT 24
 
 //전역변수
-int Delay = 50; // 100 msec delay, 이 값을 줄이면 속도가 빨라진다.
+int Delay = 100; // 100 msec delay, 이 값을 줄이면 속도가 빨라진다.
 int keep_moving = 1; // 1:계속이동, 0:한칸씩이동.
 //int time_out = 30; // 제한시간
 int xLaser[WIDTH][HEIGHT] = {0};
 int yLaser[WIDTH][HEIGHT] = { 0 };
-int Laser_count = 0;
+int xLaser_count = 0;
+int yLaser_count = 0;
 int laserinterval = 4;
 int score[100] = { 0 };
 int user_score[1] = { 0 };
@@ -55,7 +56,7 @@ int item[WIDTH][HEIGHT] = { 0 }; // 1이면 Gold 있다는 뜻
 int iteminterval = 30; // GOLD 표시 간격
 int called[2];
 int frame_count = 0;
-int Laser_frame_sync = 5;
+int Laser_frame_sync = 10000;
 int p_frame_sync = 10;
 int p_frame_sync_start = 0;
 
@@ -205,6 +206,7 @@ void player1(unsigned char ch)
 		putstar(newx, newy, STAR1); // 새로운 위치에서 * 를 표시한다.
 		oldx = newx; // 마지막 위치를 기억한다.
 		oldy = newy;
+		move_flag = 1;
 	}
 }
 
@@ -250,7 +252,9 @@ void StartMenu() {
 			item[x][y] == 0;
 		}
 	}
-	Laser_count = 0;
+	keep_moving = 1;
+	xLaser_count = 0;
+	yLaser_count = 0;
 	iteminterval = 30;
 	score[0] = 0;
 	called[0] = called[1] = 0;
@@ -338,23 +342,21 @@ void Laser_start() {
 	int x, y, set;
 	set = rand() % 10;
 	if (set < 7) {
-		x = rand() % (WIDTH - 2) + 2;
+		x = rand() % (WIDTH - 5) + 2;
 		textcolor(WHITE, WHITE);
 		gotoxy(x, 1);
 		printf("*");
 		xLaser[x][1] = 1;
-		Laser_count++;
+		xLaser_count++;
 		textcolor(WHITE, BLACK);
 	}
 	else {
 		y = rand() % (HEIGHT - 4) + 1;
 		textcolor(WHITE, WHITE);
-		gotoxy(2, y);
-		printf("*");
-		gotoxy(2, y + 1);
+		gotoxy(2, y); 
 		printf("*");
 		yLaser[2][y] = 1;
-		Laser_count++;
+		yLaser_count++;
 		textcolor(WHITE, BLACK);
 	}
 }
@@ -362,33 +364,37 @@ void Laser_start() {
 void xLaser_shoot() {
 	int x, y;
 	
-	if (Laser_count == 0)
+	if (xLaser_count == 0)
 		return;
 	for (x = 0; x < WIDTH; x++) {
-		for (y = 0; y < HEIGHT; y++) {
+		for (y = 0; y <= HEIGHT; y++) {
 			if (xLaser[x][y] && xLaser[x][y + 1] != 1) {
-				if (y > 5 && y < HEIGHT - 5) {
-					gotoxy(x, y - 4);
+				if (y > 3 && y < HEIGHT - 3) {
+					gotoxy(x, y - 3);
 					printf(BLANK);
-					xLaser[x][y - 4] = 0;
+					xLaser[x][y - 3] = 0;
 					gotoxy(x, y + 1);
 					textcolor(WHITE, WHITE);
 					printf("*");
 					textcolor(WHITE, BLACK);
 					xLaser[x][y + 1] = 1;
+					break;
 				}
-				else if (y > 5) {
-					gotoxy(x, y - 4);
-					printf(BLANK);
-					xLaser[x][y - 4] = 0;
-				}
-				else {
+				
+				else if (y <= 3) {
 					gotoxy(x, y + 1);
 					textcolor(WHITE, WHITE);
 					printf("*");
 					textcolor(WHITE, BLACK);
 					xLaser[x][y + 1] = 1;
+					break;
 				}
+			}
+			if (y >= 3 && xLaser[x][y - 3] == 1) {
+				gotoxy(x, y - 3);
+				printf(BLANK);
+				xLaser[x][y - 3] = 0;
+				break;
 			}
 		}
 	}
@@ -397,11 +403,11 @@ void xLaser_shoot() {
 void yLaser_shoot() {
 	int x, y;
 
-	if (Laser_count == 0)
-		return;
-	for (x = 0; x < WIDTH; x++) {
-		for (y = 0; y < HEIGHT; y++) {
-			if (yLaser[x][y] && yLaser[x+1][y] != 1) {
+	if (yLaser_count == 0)
+		return; 
+	for (y = 0; y < HEIGHT; y++) {
+		for (x = 0; x < WIDTH; x++) {
+			if (yLaser[x][y] && yLaser[x + 1][y] != 1) {
 				if (x > 5 && x < WIDTH - 5) {
 					gotoxy(x - 4, y);
 					printf(BLANK);
@@ -411,19 +417,22 @@ void yLaser_shoot() {
 					printf("*");
 					textcolor(WHITE, BLACK);
 					yLaser[x + 1][y] = 1;
+					break;
 				}
-				else if (x > 5) {
-					gotoxy(x - 4, y);
-					printf(BLANK);
-					yLaser[x - 4][y] = 0;
-				}
-				else {
+				else if (x <= 5){
 					gotoxy(x + 1, y);
 					textcolor(WHITE, WHITE);
 					printf("*");
 					textcolor(WHITE, BLACK);
 					yLaser[x + 1][y] = 1;
+					break;
 				}
+			}
+			else if (x >= 4 && yLaser[x - 4][y] == 1) {
+				gotoxy(x - 4, y);
+				printf(BLANK);
+				yLaser[x - 4][y] = 0;
+				break;
 			}
 		}
 	}
@@ -460,7 +469,7 @@ void main()
 
 	putstar(oldx, oldy, STAR);
 	ch = 0;
-	keep_moving = 0;
+	keep_moving = 1;
 	//srand(time(NULL));
 	start_time = time(NULL);
 	remain_time = 0;
@@ -497,6 +506,10 @@ void main()
 						player1(0);
 				}
 			}
+		}
+		else {
+			if (frame_count % p_frame_sync == 0)
+				player1(0);
 		}
 		if (frame_count % Laser_frame_sync == 0) {
 			xLaser_shoot();
