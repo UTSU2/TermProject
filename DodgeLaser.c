@@ -49,7 +49,7 @@ int xLaser[WIDTH][HEIGHT] = { 0 };
 int yLaser[WIDTH][HEIGHT] = { 0 };
 int xLaser_count = 0;
 int yLaser_count = 0;
-int laserinterval = 1;
+int laserinterval = 800; //milisec 단위
 int score[20] = { 0 };
 int user_score = 0;
 int Heart = 3; //목숨 개수
@@ -58,7 +58,8 @@ int item[WIDTH][HEIGHT] = { 0 }; // 1이면 item 있다는 뜻
 int iteminterval = 30; // item 표시 간격
 int called[2];
 int frame_count = 0;
-int Laser_frame_sync = 100;
+int Laser_frame_sync = 10;
+int Laser_create_frame_sync = 50; //생성시 프레임
 int p_frame_sync = 10;
 int p_frame_sync_start = 0;
 
@@ -424,7 +425,7 @@ void StartMenu() {
 	gotoxy(63, 5);
 	printf("■  ■");
 	//초기설정
-	int x, y;
+	int x, y, i = 2;
 	srand(time(NULL));
 	user_score = 0;
 	for (x = 0; x < WIDTH; x++) {
@@ -446,10 +447,42 @@ void StartMenu() {
 	frame_count = 0;
 	p_frame_sync = 10;
 	p_frame_sync_start = 0;
-	Laser_frame_sync = 5;
+	Laser_frame_sync = 10;
+	Laser_create_frame_sync = 50;
 
 	while (1) {
 		int c1, c2;
+		textcolor(BLUE1, BLACK);
+		if (i == 2) {
+			gotoxy(65, i);
+			printf("  ");
+			gotoxy(63, i + 1);
+			printf("      ");
+			gotoxy(61, i + 2);
+			printf("          ");
+			gotoxy(63, i + 3);
+			printf("      ");
+			i++;
+		}
+		else {
+			gotoxy(65, i);
+			printf("  ");
+			gotoxy(63, i + 1);
+			printf("      ");
+			gotoxy(61, i + 2);
+			printf("          ");
+			gotoxy(63, i + 3);
+			printf("      ");
+			i--;
+		}
+		gotoxy(65, i);
+		printf("■");
+		gotoxy(63, i + 1);
+		printf("■##■");
+		gotoxy(61, i + 2);
+		printf("■■■■■");
+		gotoxy(63, i + 3);
+		printf("■  ■");
 		do {
 			c1 = rand() % 16;
 			c2 = rand() % 16;
@@ -457,6 +490,7 @@ void StartMenu() {
 		textcolor(c1, BLACK);
 		gotoxy(21, 11);
 		printf("- 시작하려면 아무 키나 입력하십시오... -");
+		
 		Sleep(300);
 		if (_kbhit()) {
 			system("mode con cols=100 lines=25");
@@ -481,7 +515,6 @@ void main()
 
 	clock_t start = 0, now = 0, oldscore = 0, miliscore = 0;
 
-
 	newx = oldx = 10;
 	newy = oldy = 10;
 
@@ -504,9 +537,12 @@ START:
 	start = clock;
 	while (1) {
 		run_time = time(NULL) - start_time;
-		if (run_time > laser_time && (run_time % laserinterval == 0)) {
+		if (frame_count % Laser_create_frame_sync == 0) {
 			Laser_start();
-			laser_time = run_time;
+		}
+		if (run_time % 10 == 0 && Laser_frame_sync > 4) { //cre= 50, fra= 10 시작
+			Laser_create_frame_sync -= 15;
+			Laser_frame_sync -= 3;
 		}
 		oldscore = miliscore;
 		now = clock();
