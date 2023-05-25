@@ -108,7 +108,7 @@ void cls(int bg_color, int text_color) // 화면 지우기
 
 // box 그리기 함수, ch 문자열로 (x1,y1) ~ (x2,y2) box를 그린다.
 // 한글 문자를 그리는 용도로 사용 "□" 로 벽을 그리는 경우
-void draw_box2(int x1, int y1, int x2, int y2)
+void draw_box(int x1, int y1, int x2, int y2)
 {
 	int x, y;
 	//int len = strlen(ch);
@@ -462,7 +462,7 @@ void StartMenu() {
 			system("mode con cols=100 lines=25");
 			cls(BLACK, WHITE);
 			textcolor(WHITE, BLACK);
-			draw_box2(0, 0, 78, 22);
+			draw_box(0, 0, 78, 22);
 			show_Heart();
 			show_score();
 			break;
@@ -491,7 +491,7 @@ START:
 	removeCursor(); // 커서를 안보이게 한다
 	system("mode con cols=80 lines=24");
 	cls(BLACK, WHITE);
-	draw_box2(0, 0, 78, 22);
+	draw_box(0, 0, 78, 22);
 	StartMenu(); //시작화면
 
 	putstar(oldx, oldy, STAR);
@@ -550,7 +550,11 @@ START:
 			for (int y = 0; y < HEIGHT; y++) {
 				if (Pcolor_frame == 0 && ((xLaser[x][y] == 1 && player_pos[x][y] == 1) || (yLaser[x][y] == 1 && player_pos[x][y] == 1))) {
 					pm_Heart(0);
-					Pcolor_frame += 50;
+					Pcolor_frame += 70;
+					textcolor(BLUE1, BLACK);
+					putstar(x, y, STAR1);
+					textcolor(WHITE, BLACK);
+					break;
 				}
 			}
 		}
