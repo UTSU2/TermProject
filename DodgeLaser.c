@@ -23,7 +23,8 @@
 #define WHITE	15
 
 //조작 및 캐릭터 관련
-#define STAR '*'
+#define POTION "§"
+#define SLOW "◎"
 #define LASER "○" //*로 대체할 예정
 #define STAR1 "★" // player1 표시
 #define BLANK "  " // ' ' 로하면 흔적이 지워진다 
@@ -49,19 +50,19 @@ int xLaser[WIDTH][HEIGHT] = { 0 };
 int yLaser[WIDTH][HEIGHT] = { 0 };
 int xLaser_count = 0;
 int yLaser_count = 0;
-int laserinterval = 800; //milisec 단위
 int score[20] = { 0 };
 int user_score = 0;
 int Heart = 3; //목숨 개수
 int Pcolor_frame; //목숨이 깎였을 때 색깔 표시
-int item[WIDTH][HEIGHT] = { 0 }; // 1이면 item 있다는 뜻
-int iteminterval = 30; // item 표시 간격
+int potion[WIDTH][HEIGHT] = { 0 };
+int slow[WIDTH][HEIGHT] = { 0 }; // 1이면 item 있다는 뜻
 int called[2];
 int frame_count = 0;
 int Laser_frame_sync = 10;
 int Laser_create_frame_sync = 50; //생성시 프레임
 int p_frame_sync = 10;
 int p_frame_sync_start = 0;
+int item_frame_sync = 3000; // item 표시 간격 : 프레임단위
 
 void gotoxy(int x, int y) //내가 원하는 위치로 커서 이동
 {
@@ -106,7 +107,9 @@ void cls(int bg_color, int text_color) // 화면 지우기
 	sprintf(cmd, "COLOR %x%x", bg_color, text_color);
 	system(cmd);
 }
-
+//미리 선언
+void slow_item();
+void potion_item();
 // box 그리기 함수, ch 문자열로 (x1,y1) ~ (x2,y2) box를 그린다.
 // 한글 문자를 그리는 용도로 사용 "□" 로 벽을 그리는 경우
 void draw_box(int x1, int y1, int x2, int y2)
@@ -170,6 +173,28 @@ void pm_Heart(int val) {
 		Heart--;
 		show_Heart();
 	}
+}
+
+void potion_item() {
+	int x, y;
+	do {
+		x = rand() % (WIDTH - 5) + 2;
+		y = rand() % (HEIGHT - 4) + 1;
+	} while (potion[x][y] == 1 || slow[x][y] == 1);
+	gotoxy(x, y);
+	printf(POTION);
+	potion[x][y] = 1;
+}
+
+void slow_item() {
+	int x, y;
+	do {
+		x = rand() % (WIDTH - 5) + 2;
+		y = rand() % (HEIGHT - 4) + 1;
+	} while (potion[x][y] == 1 || slow[x][y] == 1);
+	gotoxy(x, y);
+	printf(SLOW);
+	slow[x][y] = 1;
 }
 
 void player1(unsigned char ch)
@@ -430,7 +455,8 @@ void StartMenu() {
 	user_score = 0;
 	for (x = 0; x < WIDTH; x++) {
 		for (y = 0; y < HEIGHT; y++) {
-			item[x][y] = 0;
+			potion[x][y] = 0;
+			slow[x][y] = 0;
 			xLaser[x][y] = 0;
 			yLaser[x][y] = 0;
 			player_pos[x][y] = 0;
@@ -441,14 +467,13 @@ void StartMenu() {
 	Heart = 3;
 	xLaser_count = 0;
 	yLaser_count = 0;
-	iteminterval = 30;
-	laserinterval = 1;
 	called[0] = called[1] = 0;
 	frame_count = 0;
 	p_frame_sync = 10;
 	p_frame_sync_start = 0;
 	Laser_frame_sync = 10;
 	Laser_create_frame_sync = 50;
+	item_frame_sync = 3000;
 
 	while (1) {
 		int c1, c2;
@@ -509,9 +534,9 @@ void main()
 	unsigned char ch; // 특수키 0xe0 을 입력받으려면 unsigned char 로 선언해야 함
 	int oldx, oldy, newx, newy;
 
-	int run_time, start_time, remain_time, last_remain_time;
-	int laser_time = 0;
-	int Lx, Ly, sh, lasercount = 0;
+	int run_time, start_time;
+	int laser_time = 0, lasercount = 0;
+	int item_random = 0;
 
 	clock_t start = 0, now = 0, oldscore = 0, miliscore = 0;
 
@@ -527,12 +552,11 @@ START:
 	draw_box(0, 0, 78, 22);
 	StartMenu(); //시작화면
 
-	putstar(oldx, oldy, STAR);
+	putstar(oldx, oldy, STAR1);
 	ch = 0;
 	keep_moving = 0;
 	//시간측정
 	start_time = time(NULL);
-	remain_time = 0;
 	//점수측정
 	start = clock;
 	while (1) {
@@ -587,6 +611,21 @@ START:
 				if (Pcolor_frame == 0 && ((xLaser[x][y] == 1 && player_pos[x][y] == 1) || (yLaser[x][y] == 1 && player_pos[x][y] == 1))) {
 					pm_Heart(0);
 					Pcolor_frame += 70;
+					textcolor(BLUE1, BLACK);
+					putstar(x, y, STAR1);
+					textcolor(WHITE, BLACK);
+					break;
+				}
+			}
+		}
+		for (int x = 0; x < WIDTH; x++) {
+			for (int y = 0; y < HEIGHT; y++) {
+				if (player_pos[x][y] == 1 && Pcolor_frame == 0) {
+					textcolor(WHITE, BLACK);
+					putstar(x, y, STAR1);
+					break;
+				}
+				else if (player_pos[x][y] == 1 && Pcolor_frame != 0) {
 					textcolor(BLUE1, BLACK);
 					putstar(x, y, STAR1);
 					textcolor(WHITE, BLACK);
