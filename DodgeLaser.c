@@ -64,6 +64,8 @@ int Laser_create_frame_sync = 50; //생성시 프레임
 int p_frame_sync = 10;
 int p_frame_sync_start = 0;
 int item_frame_sync = 300; // item 표시 간격 : 프레임단위
+int special_pattern = 0;
+int special_frame_sync = 1500;
 
 void gotoxy(int x, int y) //내가 원하는 위치로 커서 이동
 {
@@ -352,6 +354,8 @@ void xLaser_shoot() {
 				gotoxy(x, y - 3);
 				printf(BLANK);
 				xLaser[x][y - 3] = 0;
+				if (y == 24)
+					xLaser_count--;
 				break;
 			}
 		}
@@ -390,9 +394,56 @@ void yLaser_shoot() {
 				gotoxy(x - 6, y);
 				printf(BLANK);
 				yLaser[x - 6][y] = 0;
+				if (x == 82)
+					yLaser_count--;
 				break;
 			}
 		}
+	}
+}
+
+void clean_map() {
+	int x,y;
+	for (y = 1; y < HEIGHT - 2; y++) {
+		for (x = 2; x < WIDTH - 5; x += 2) {
+			gotoxy(x, y);
+			printf(BLANK);
+		}
+	}
+	for (x = 0; x < WIDTH; x++) { //레이저 위치, 아이템 모두 초기화(특수 패턴 생성 위해)
+		for (y = 0; y < HEIGHT; y++) {
+			potion[x][y] = 0;
+			slow[x][y] = 0;
+			xLaser[x][y] = 0;
+			yLaser[x][y] = 0;
+			xLaser_count = 0;
+			yLaser_count = 0;
+		}
+	}
+
+}
+
+void special_pattern_x() {
+	int x;
+	for (x = 2; x < WIDTH - 3; x += 4) {
+		textcolor(YELLOW1, YELLOW1);
+		gotoxy(x, 1);
+		printf(LASER);
+		xLaser[x][1] = 1;
+		xLaser_count++;
+		textcolor(WHITE, BLACK);
+	}
+}
+
+void special_pattern_y() {
+	int y;
+	for (y = 2; y < HEIGHT - 2; y += 2) {
+		textcolor(YELLOW1, YELLOW1);
+		gotoxy(2, y);
+		printf(LASER);
+		yLaser[2][y] = 1;
+		yLaser_count++;
+		textcolor(WHITE, BLACK);
 	}
 }
 
@@ -483,6 +534,8 @@ void StartMenu() {
 	Laser_create_frame_sync = 50;
 	item_frame_sync = 300;
 	Pcolor_frame = 0;
+	special_pattern = 0;
+	special_frame_sync = 1500;
 
 	while (1) {
 		int c1, c2;
@@ -541,17 +594,13 @@ void StartMenu() {
 void main()
 {
 	unsigned char ch; // 특수키 0xe0 을 입력받으려면 unsigned char 로 선언해야 함
-	//int oldx, oldy, newx, newy;
 
 	int run_time, start_time;
 	int laser_time = 0, lasercount = 0;
 	int laser_stack_count = 0, laser_stack = 0;
-	int random_item = 0;
+	int random_item = 0, random_pattern = 0;
 
 	clock_t start = 0, now = 0, oldscore = 0, miliscore = 0;
-
-	//newx = oldx = 10;
-	//newy = oldy = 10;
 
 START:
 	laser_time = 0;
@@ -564,6 +613,7 @@ START:
 	draw_box(0, 0, 78, 22);
 	StartMenu(); //시작화면
 
+	srand(time(NULL));
 	textcolor(WHITE, BLACK);
 	putstar(10, 10, STAR1);
 	gotoxy(30, 23);
@@ -600,18 +650,29 @@ START:
 			gotoxy(30, 23);
 			printf("난이도 : %d", laser_stack + 1);
 		}
-		//레이저 방출
-		if (frame_count % Laser_create_frame_sync == 0) {
+		
+		if (frame_count > 0 && frame_count % special_frame_sync == 0 && special_pattern == 0) { //맵 초기화 후 특수 패턴 시작
+			special_pattern = 1;
+			clean_map();
+			random_pattern = rand() % 2;
+			if (random_pattern == 0) {
+				special_pattern_x();
+			}
+			else {
+				special_pattern_y();
+			}
+		}
+
+		if (frame_count % Laser_create_frame_sync == 0 && special_pattern == 0) { //레이저 방출(특수 패턴 없을 때만 생성)
 			Laser_start();
 		}
-		if (frame_count % item_frame_sync == 0) {
+		if (frame_count % item_frame_sync == 0 && special_pattern == 0) { //아이템 생성(특수 패턴 없을 때만 생성)
 			random_item = rand() % 2 + 1;
 			if (random_item == 1)
 				slow_set();
 			else
 				potion_set();
 		}
-		//오류발생중
 		
 		oldscore = miliscore; //점수
 		now = clock();
@@ -650,6 +711,10 @@ START:
 		if (frame_count % Laser_frame_sync == 0) {
 			xLaser_shoot();
 			yLaser_shoot();
+		}
+
+		if (special_pattern == 1 && xLaser_count == 0 && yLaser_count == 0) { //패턴 끝났으면 원상 복귀
+			special_pattern = 0;
 		}
 		
 		for (int x = 0; x < WIDTH; x++) { //아이템이 레이저에 닿으면 없어짐
