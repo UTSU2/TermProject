@@ -25,7 +25,7 @@
 //조작 및 캐릭터 관련
 #define POTION "§"
 #define SLOW "◎"
-#define LASER "○" //*로 대체할 예정
+#define LASER "○"
 #define STAR1 "★" // player1 표시
 #define BLANK "  " // ' ' 로하면 흔적이 지워진다 
 
@@ -43,11 +43,12 @@
 #define HEIGHT 24
 
 //전역변수
-int Delay = 2; // 100 msec delay, 이 값을 줄이면 속도가 빨라진다.
+int Delay = 1; // 100 msec delay, 이 값을 줄이면 속도가 빨라진다.
 int keep_moving = 0; // 1:계속이동, 0:한칸씩이동.
 int player_pos[WIDTH][HEIGHT] = { 0 };
 int xLaser[WIDTH][HEIGHT] = { 0 };
 int yLaser[WIDTH][HEIGHT] = { 0 };
+int special[WIDTH][HEIGHT] = { 0 };
 int xLaser_count = 0;
 int yLaser_count = 0;
 int score[20] = { 0 };
@@ -148,31 +149,37 @@ void show_Heart() {
 		break;
 	case 1:
 		printf("        ");
-		textcolor(WHITE, BLACK);
+		textcolor(RED1, BLACK);
 		gotoxy(2, 23);
 		printf("♥");
 		break;
 	case 2:
 		printf("        ");
-		textcolor(WHITE, BLACK);
+		textcolor(RED1, BLACK);
 		gotoxy(2, 23);
 		printf("♥ ♥");
 		break;
 	case 3:
 		printf("        ");
-		textcolor(WHITE, BLACK);
+		textcolor(RED1, BLACK);
 		gotoxy(2, 23);
 		printf("♥ ♥ ♥");
 		break;
+	default:
+		printf("        ");
+		textcolor(WHITE, BLACK);
+		gotoxy(2, 23);
+		break;
 	}
+	textcolor(WHITE, BLACK);
 }
 
 void pm_Heart(int val) {
-	if (val == 1) {
+	if (val == 1 && Heart < 3) {
 		Heart++;
 		show_Heart();
 	}
-	else {
+	else if(val == 0) {
 		Heart--;
 		show_Heart();
 	}
@@ -403,9 +410,9 @@ void yLaser_shoot() {
 }
 
 void clean_map() {
-	int x,y;
+	int x, y;
 	for (y = 1; y < HEIGHT - 2; y++) {
-		for (x = 2; x < WIDTH - 5; x += 2) {
+		for (x = 2; x < WIDTH - 3; x += 2) {
 			gotoxy(x, y);
 			printf(BLANK);
 		}
@@ -423,30 +430,168 @@ void clean_map() {
 
 }
 
-void special_pattern_x() {
+int special_UFO[4][38] = { //UFO에 충돌시 게임 오버를 만들기 위해
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+	0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,
+	0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0
+};
+void special_pattern_UFO() {
 	int x;
-	for (x = 2; x < WIDTH - 3; x += 4) {
+	for (int y = 0; y < 4; y++) {
+		gotoxy(2, y + 1);
+		for (x = 0; x < 38; x++) {
+			if (y < 2)
+				textcolor(GRAY2, GRAY2);
+			else
+				textcolor(YELLOW2, YELLOW2);
+			if (special_UFO[y][x] == 1)
+				printf("■");
+			else {
+				textcolor(BLACK, BLACK);
+				printf(BLANK);
+			}
+			textcolor(WHITE, BLACK);
+		}
+	}
+	for (x = 14; x < 65; x += 2) { //14 21, 36 43, 58 65
+		if (x < 21 || (x >= 36 && x < 43) || x >= 58) {
+			textcolor(YELLOW1, YELLOW1);
+			gotoxy(x, 8);
+			printf(LASER);
+			xLaser[x][8] = 1;
+			xLaser_count++;
+			textcolor(WHITE, BLACK);
+		}
+	}
+}
+
+int special_EYE[4][38] = { //UFO에 충돌시 게임 오버를 만들기 위해
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	0,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,0,
+	0,0,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,0,0,
+	0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0
+};
+void special_pattern_EYE() {
+	int x;
+	for (int y = 0; y < 4; y++) {
+		gotoxy(2, y + 1);
+		for (x = 0; x < 38; x++) {
+			if (special_EYE[y][x] == 1) {
+				textcolor(GREEN2, GREEN2);
+				printf("■");
+			}
+			else if (special_EYE[y][x] == 2) {
+				textcolor(WHITE, WHITE);
+				printf("○");
+			}
+			else if (special_EYE[y][x] == 3) {
+				textcolor(YELLOW1, YELLOW1);
+				printf("＠");
+			}
+			else {
+				textcolor(BLACK, BLACK);
+				printf(BLANK);
+			}
+			textcolor(WHITE, BLACK);
+		}
+	}
+	for (x = 14; x < 66; x += 2) { //14 21, 36 43, 58 65
 		textcolor(YELLOW1, YELLOW1);
-		gotoxy(x, 1);
+		gotoxy(x, 8);
 		printf(LASER);
-		xLaser[x][1] = 1;
+		xLaser[x][8] = 1;
 		xLaser_count++;
 		textcolor(WHITE, BLACK);
 	}
 }
 
-void special_pattern_y() {
-	int y;
-	for (y = 2; y < HEIGHT - 2; y += 2) {
+int special_RAIN[4][38] = { //UFO에 충돌시 게임 오버를 만들기 위해
+	0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,
+	0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,0,0,
+	0,0,1,1,2,2,2,2,1,2,1,2,1,2,2,2,2,1,2,2,2,1,1,2,2,1,1,1,1,1,1,2,2,2,2,1,0,0,
+	0,0,0,0,0,2,2,2,2,2,2,2,0,0,0,0,2,2,2,2,2,2,2,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0
+};
+void special_pattern_RAIN() {
+	int x;
+	for (int y = 0; y < 4; y++) {
+		gotoxy(2, y + 1);
+		for (x = 0; x < 38; x++) {
+			if (special_RAIN[y][x] == 1) {
+				textcolor(GRAY1, GRAY1);
+				printf("■");
+			}
+			else if (special_RAIN[y][x] == 2) {
+				textcolor(GRAY2, GRAY2);
+				printf("○");
+			}
+			else {
+				textcolor(BLACK, BLACK);
+				printf(BLANK);
+			}
+			textcolor(WHITE, BLACK);
+		}
+	}
+	for (x = 2; x < WIDTH - 3; x += 4) {
 		textcolor(YELLOW1, YELLOW1);
-		gotoxy(2, y);
+		gotoxy(x, 8);
 		printf(LASER);
-		yLaser[2][y] = 1;
-		yLaser_count++;
+		xLaser[x][8] = 1;
+		xLaser_count++;
 		textcolor(WHITE, BLACK);
 	}
 }
 
+int special_GUN[21][5] = { //샷건에 충돌시 게임 오버를 만들기 위해
+	0,0,0,0,0,
+	0,0,0,0,0,
+	0,0,0,0,0,
+	0,0,0,0,0,
+	0,0,0,1,0,
+	1,1,1,0,1,
+	1,1,1,0,1,
+	1,1,1,0,1,
+	0,0,0,1,0,
+	1,1,1,0,1,
+	1,1,1,0,1,
+	1,1,1,0,1,
+	0,0,0,1,0,
+	1,1,1,0,1,
+	1,1,1,0,1,
+	1,1,1,0,1,
+	0,0,0,1,0,
+	0,0,0,0,0,
+	0,0,0,0,0,
+	0,0,0,0,0,
+	0,0,0,0,0,
+};
+void special_pattern_GUN() {
+	int x, y;
+	for (y = 0; y < 21; y++) {
+		gotoxy(2, y + 1);
+		for (x = 0; x < 5; x++) {
+			if (x < 2)
+				textcolor(GRAY1, GRAY2);
+			else
+				textcolor(WHITE, WHITE);
+			if (special_GUN[y][x] == 1)
+				printf("■");
+			else {
+				textcolor(BLACK, BLACK);
+				printf(BLANK);
+			}
+			textcolor(WHITE, BLACK);
+		}
+	}
+	for (y = 2; y < HEIGHT - 2; y += 2) {
+		textcolor(YELLOW1, YELLOW1);
+		gotoxy(18, y);
+		printf(LASER);
+		yLaser[18][y] = 1;
+		yLaser_count++;
+		textcolor(WHITE, BLACK);
+	}
+}
 void show_time(int remain_time)
 {
 	gotoxy(31, 24);
@@ -458,7 +603,7 @@ void show_time(int remain_time)
 void show_score() {
 	int i, y = 2;
 	int length = 20;
-	gotoxy(82, 1);
+	gotoxy(83, 1);
 	printf("[점수판]");
 	for (i = 0; i < length; i++) {
 		gotoxy(82, y);
@@ -487,6 +632,7 @@ void StartMenu() {
 	printf("■       ■    ■       ■ ■       ■    ■\n");
 	gotoxy(2, 5);
 	printf("■■■■ ■    ■ ■■■■ ■■■■ ■    ■\n");
+
 	gotoxy(34, 17);
 	printf("■■■     ■■   ■■■   ■■■■ ■■■■\n");
 	gotoxy(34, 18);
@@ -535,7 +681,7 @@ void StartMenu() {
 	item_frame_sync = 300;
 	Pcolor_frame = 0;
 	special_pattern = 0;
-	special_frame_sync = 1500;
+	special_frame_sync = 1000;
 
 	while (1) {
 		int c1, c2;
@@ -599,6 +745,8 @@ void main()
 	int laser_time = 0, lasercount = 0;
 	int laser_stack_count = 0, laser_stack = 0;
 	int random_item = 0, random_pattern = 0;
+	int pattern_warning = 0, warning_count = 0;
+	int pattern_UFO = 0, pattern_GUN = 0, pattern_EYE = 0, pattern_RAIN = 0;
 
 	clock_t start = 0, now = 0, oldscore = 0, miliscore = 0;
 
@@ -607,6 +755,9 @@ START:
 	lasercount = 0;
 	laser_stack = 0;
 	laser_stack_count = 0;
+	pattern_warning = 0;
+	warning_count = 0;
+	pattern_UFO = 0, pattern_GUN = 0, pattern_EYE = 0, pattern_RAIN = 0;
 	removeCursor(); // 커서를 안보이게 한다
 	system("mode con cols=80 lines=24");
 	cls(BLACK, WHITE);
@@ -636,7 +787,7 @@ START:
 		else if (slow_count > 0 && laser_stack == 0) {
 			slow_count--;
 		}
-		else if (slow_count == 0 && run_time % 10 == 0 && Laser_frame_sync > 3 && run_time / 10 != laser_stack_count) { //cre= 50, fra= 10 시작
+		else if (slow_count == 0 && run_time % 10 == 0 && Laser_frame_sync > 3 && run_time / 10 != laser_stack_count) { //초기값 cre= 50, fra= 10
 			Laser_create_frame_sync -= 10;
 			Laser_frame_sync -= 2;
 			laser_stack++;
@@ -650,19 +801,54 @@ START:
 			gotoxy(30, 23);
 			printf("난이도 : %d", laser_stack + 1);
 		}
-		
+		//특수 패턴 발생
 		if (frame_count > 0 && frame_count % special_frame_sync == 0 && special_pattern == 0) { //맵 초기화 후 특수 패턴 시작
 			special_pattern = 1;
 			clean_map();
-			random_pattern = rand() % 2;
-			if (random_pattern == 0) {
-				special_pattern_x();
+			pattern_warning = 1;
+			warning_count = 50;
+		}
+		//특수 패턴 경고 문구
+		if (special_pattern == 1 && warning_count != 0) {
+			if (warning_count % 2 == 1)
+				textcolor(RED2, BLACK);
+			else
+				textcolor(BLACK, BLACK);
+			gotoxy(9, 5);
+			printf("■    ■ ■■■■ ■■■■ ■    ■ ■■■■ ■    ■ ■■■■\n");
+			gotoxy(9, 6);
+			printf("■ ■ ■ ■    ■ ■    ■ ■■  ■    ■    ■■  ■ ■      \n");
+			gotoxy(9, 7);
+			printf("■ ■ ■ ■■■■ ■■■   ■ ■ ■    ■    ■    ■ ■  ■■\n");
+			gotoxy(9, 8);
+			printf("■ ■ ■ ■    ■ ■    ■ ■  ■■    ■    ■  ■■ ■    ■\n");
+			gotoxy(9, 9);
+			printf("■■■■ ■    ■ ■    ■ ■    ■ ■ ■ ■ ■    ■ ■■■■\n");
+		}
+		else if (special_pattern == 1 && warning_count == 0 && pattern_warning == 1) {
+			gotoxy(29, 10);
+			clean_map();
+			random_pattern = rand() % 4;
+			if (random_pattern == 1) {
+				special_pattern_UFO();
+				pattern_UFO = 1;
+			}
+			else if (random_pattern == 2) {
+				special_pattern_GUN();
+				pattern_GUN = 1;
+			}
+			else if (random_pattern == 3) {
+				special_pattern_EYE();
+				pattern_EYE = 1;
 			}
 			else {
-				special_pattern_y();
+				special_pattern_RAIN();
+				pattern_RAIN = 1;
 			}
+			pattern_warning--;
 		}
 
+		//특수 패턴 발생 시 아이템, 기존 레이저 생성 멈춤
 		if (frame_count % Laser_create_frame_sync == 0 && special_pattern == 0) { //레이저 방출(특수 패턴 없을 때만 생성)
 			Laser_start();
 		}
@@ -673,7 +859,7 @@ START:
 			else
 				potion_set();
 		}
-		
+
 		oldscore = miliscore; //점수
 		now = clock();
 		miliscore = (now - start) % CLOCKS_PER_SEC;
@@ -708,15 +894,22 @@ START:
 				}
 			}
 		}
-		if (frame_count % Laser_frame_sync == 0) {
+		if (frame_count % Laser_frame_sync == 0) { //레이저 움직임
 			xLaser_shoot();
 			yLaser_shoot();
 		}
-
-		if (special_pattern == 1 && xLaser_count == 0 && yLaser_count == 0) { //패턴 끝났으면 원상 복귀
-			special_pattern = 0;
+		if (warning_count != 0) {
+			warning_count--;
 		}
-		
+		if (special_pattern == 1 && xLaser_count == 0 && yLaser_count == 0 && pattern_warning == 0) { //패턴 끝났으면 원상 복귀
+			clean_map();
+			special_pattern = 0;
+			pattern_UFO = 0;
+			pattern_GUN = 0;
+			pattern_EYE = 0;
+			pattern_RAIN = 0;
+		}
+
 		for (int x = 0; x < WIDTH; x++) { //아이템이 레이저에 닿으면 없어짐
 			for (int y = 0; y < HEIGHT; y++) {
 				if ((xLaser[x][y] == 1 && slow[x][y] == 1) || (yLaser[x][y] == 1 && slow[x][y] == 1)) {
@@ -741,6 +934,63 @@ START:
 				}
 			}
 		}
+		for (int x = 0; x < WIDTH; x++) { //특수 패턴 : 우주선,샷건,눈알,먹구름에서 오브젝트들에 충돌했을 경우 : 즉사함
+			for (int y = 0; y < 5; y++) {
+				if (pattern_UFO == 1 && Pcolor_frame == 0 && (special_UFO[y - 1][x / 2 - 1] == 1 && player_pos[x][y] == 1)) {
+					pm_Heart(0);
+					pm_Heart(0);
+					pm_Heart(0);
+					Pcolor_frame += 70;
+					textcolor(BLUE1, BLACK);
+					putstar(x, y, STAR1);
+					textcolor(WHITE, BLACK);
+					break;
+				}
+			}
+		}
+		for (int x = 0; x < 12; x++) { //특수 패턴 : 우주선,샷건,눈알,먹구름에서 오브젝트들에 충돌했을 경우 : 즉사함
+			for (int y = 0; y < HEIGHT; y++) {
+				if (pattern_GUN == 1 && Pcolor_frame == 0 && (special_GUN[y - 1][x / 2 - 1] == 1 && player_pos[x][y] == 1)) {
+					pm_Heart(0);
+					pm_Heart(0);
+					pm_Heart(0);
+					Pcolor_frame += 70;
+					textcolor(BLUE1, BLACK);
+					putstar(x, y, STAR1);
+					textcolor(WHITE, BLACK);
+					break;
+				}
+			}
+		}
+		for (int x = 0; x < WIDTH; x++) { //특수 패턴 : 우주선,샷건,눈알,먹구름에서 오브젝트들에 충돌했을 경우 : 즉사함
+			for (int y = 0; y < 5; y++) {
+				if (pattern_EYE == 1 && Pcolor_frame == 0 && (special_EYE[y - 1][x / 2 - 1] >= 1 && player_pos[x][y] == 1)) {
+					pm_Heart(0);
+					pm_Heart(0);
+					pm_Heart(0);
+					Pcolor_frame += 70;
+					textcolor(BLUE1, BLACK);
+					putstar(x, y, STAR1);
+					textcolor(WHITE, BLACK);
+					break;
+				}
+			}
+		}
+		for (int x = 0; x < WIDTH; x++) { //특수 패턴 : 우주선,샷건,눈알,먹구름에서 오브젝트들에 충돌했을 경우 : 즉사함
+			for (int y = 0; y < 5; y++) {
+				if (pattern_RAIN == 1 && Pcolor_frame == 0 && (special_RAIN[y - 1][x / 2 - 1] >= 1 && player_pos[x][y] == 1)) {
+					pm_Heart(0);
+					pm_Heart(0);
+					pm_Heart(0);
+					Pcolor_frame += 70;
+					textcolor(BLUE1, BLACK);
+					putstar(x, y, STAR1);
+					textcolor(WHITE, BLACK);
+					break;
+				}
+			}
+		}
+
 		for (int x = 0; x < WIDTH; x++) { //플레이어 화면에서 사라지지 않게 하기 위함
 			for (int y = 0; y < HEIGHT; y++) {
 				if (player_pos[x][y] == 1 && Pcolor_frame == 0) {
