@@ -192,7 +192,9 @@ void potion_set() {
 		y = rand() % (HEIGHT - 4) + 1;
 	} while ((potion[x][y] == 1 || slow[x][y] == 1) || x % 2 != 0);
 	gotoxy(x, y);
+	textcolor(RED1, BLACK);
 	printf(POTION);
+	textcolor(WHITE, BLACK);
 	potion[x][y] = 1;
 }
 
@@ -203,7 +205,9 @@ void slow_set() {
 		y = rand() % (HEIGHT - 4) + 1;
 	} while ((potion[x][y] == 1 || slow[x][y] == 1) || x % 2 != 0);
 	gotoxy(x, y);
+	textcolor(MAGENTA2, BLACK);
 	printf(SLOW);
+	textcolor(WHITE, BLACK);
 	slow[x][y] = 1;
 }
 
